@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>3조 SNS 예시</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+            crossorigin="anonymous"
+        />
+        <link
+            rel="stylesheet"
+            href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"
+        />
+        <style>
+            /* 스타일 코드 생략 */
+
+            /* 새로 추가한 스타일 */
+            .hidden {
+                display: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container">
+                <a class="navbar-brand" href="#">3조 SNS</a>
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav"
+                    aria-controls="navbarNav"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="./index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./profile.html"
+                                >Profile</a
+                            >
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./messages.html"
+                                >Messages</a
+                            >
+                        </li>
+                        <li class="nav-item">
+                            <a id="logoutButton" class="nav-link" href="#"
+                                >Logout</a
+                            >
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-5">
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- 자기소개 페이지 -->
+                    <div id="profilePage" class="card">
+                        <!-- 프로필 정보 -->
+                        <div class="card-body">
+                            <h5 class="card-title">프로필 정보</h5>
+                            <div id="profileInfo">
+                                <p>
+                                    <strong>이름:</strong>
+                                    <span id="profileName"></span>
+                                </p>
+                                <p>
+                                    <strong>소개:</strong>
+                                    <span id="profileBio"></span>
+                                </p>
+                                <p>
+                                    <strong>아이디:</strong>
+                                    <span id="profileUserId"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 로그인 화면 이동 버튼 -->
+                    <div id="loginButton" class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">로그인이 필요합니다.</h5>
+                            <a href="./login.html" class="btn btn-primary"
+                                >로그인</a
+                            >
+                        </div>
+                    </div>
+
+                    <!-- 회원가입 화면 이동 버튼 -->
+                    <div id="signupButton" class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">회원이 아니신가요?</h5>
+                            <a href="./register.html" class="btn btn-primary"
+                                >회원가입</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">New Post</h5>
+                            <div id="editor" class="form-control"></div>
+                            <div class="text-end mt-2">
+                                <button id="postButton" class="btn btn-primary">
+                                    Post
+                                </button>
+                            </div>
+                        </div>
+                        <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+                        <script>
+                            // 에디터 설정 코드 생략
+                        </script>
+                    </div>
+
+                    <!-- 포스트 리스트 -->
+                    <div id="postList" class="card mb-4">
+                        <!-- 포스트 목록 코드 생략 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+            crossorigin="anonymous"
+        ></script>
+        <script>
+            let isLoggedIn = false; // 로그인 상태에 따라 true 또는 false로 설정
+
+            function showPage(isLoggedIn) {
+                const profilePage = document.querySelector("#profilePage");
+                const loginButton = document.querySelector("#loginButton");
+                const signupButton = document.querySelector("#signupButton");
+                const logoutButton = document.querySelector("#logoutButton");
+                const postList = document.querySelector("#postList");
+
+                if (isLoggedIn) {
+                    // 로그인 상태인 경우
+                    profilePage.classList.remove("hidden");
+                    loginButton.classList.add("hidden");
+                    signupButton.classList.add("hidden");
+                    logoutButton.classList.remove("hidden");
+                    postList.classList.remove("hidden");
+                } else {
+                    // 로그인 상태가 아닌 경우
+                    profilePage.classList.add("hidden");
+                    loginButton.classList.remove("hidden");
+                    signupButton.classList.remove("hidden");
+                    logoutButton.classList.add("hidden");
+                    postList.classList.add("hidden");
+                }
+            }
+            // 로그인 상태 확인 API 호출
+            async function checkLoginStatus() {
+                try {
+                    const response = await fetch("/api/check-login");
+                    if (!response.ok) {
+                        throw new Error("로그인 상태 확인에 실패했습니다.");
+                    }
+                    const data = await response.json();
+
+                    console.log(data)
+
+                    if (data.isLoggedIn) {
+                        isLoggedIn = true;
+                        console.log("로그인 성공");
+                    } else {
+                        isLoggedIn = false;
+                        console.log("로그인 실패");
+                    }
+
+                    showPage(isLoggedIn);
+                } catch (error) {
+                    console.error(error);
+                    isLoggedIn = false;
+                    showPage(isLoggedIn);
+                }
+            }
+
+            // 프로필 정보 요청 처리
+            async function fetchProfileInfo() {
+                try {
+                    const response = await fetch("/api/profile");
+                    const data = await response.json();
+
+                    console.log(data);
+
+                    if (response.ok) {
+                        // 프로필 정보 업데이트
+                        const profileName =
+                            document.querySelector("#profileName");
+                        const profileBio =
+                            document.querySelector("#profileBio");
+                        const profileUserId =
+                            document.querySelector("#profileUserId");
+
+                        profileName.textContent = data.name;
+                        profileBio.textContent = data.bio;
+                        profileUserId.textContent = data.user_id;
+                    } else {
+                        console.error(data.message);
+                    }
+                } catch (error) {
+                    console.log("error");
+                }
+            }
+
+            checkLoginStatus();
+            fetchProfileInfo();
+        </script>
+    </body>
+</html>
