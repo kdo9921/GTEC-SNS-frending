@@ -14,16 +14,19 @@
             rel="stylesheet"
             href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"
         />
+        <link
+            rel="stylesheet"
+            href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"
+        />
         <style>
             /* 스타일 코드 생략 */
-
             /* 새로 추가한 스타일 */
             .hidden {
                 display: none;
             }
         </style>
+        <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
     </head>
-
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container">
@@ -63,7 +66,6 @@
                 </div>
             </div>
         </nav>
-
         <div class="container mt-5">
             <div class="row">
                 <div class="col-md-4">
@@ -88,7 +90,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- 로그인 화면 이동 버튼 -->
                     <div id="loginButton" class="card">
                         <div class="card-body text-center">
@@ -98,7 +99,6 @@
                             >
                         </div>
                     </div>
-
                     <!-- 회원가입 화면 이동 버튼 -->
                     <div id="signupButton" class="card">
                         <div class="card-body text-center">
@@ -109,46 +109,50 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-8">
                     <div class="card mb-4">
                         <div class="card-body">
                             <h5 class="card-title">New Post</h5>
-                            <div id="editor" class="form-control"></div>
+                            <div id="editor"></div>
                             <div class="text-end mt-2">
                                 <button id="postButton" class="btn btn-primary">
                                     Post
                                 </button>
                             </div>
                         </div>
-                        <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
                         <script>
-                            // 에디터 설정 코드 생략
+                            const Editor = toastui.Editor;
+
+                            const editor = new Editor({
+                                el: document.querySelector("#editor"),
+                                height: "300px",
+                                initialEditType: "markdown",
+                                previewStyle: "vertical",
+                            });
                         </script>
                     </div>
-
                     <!-- 포스트 리스트 -->
-                    <div id="postList" class="card mb-4">
+                    <div id="postList" class="mb-4">
                         <!-- 포스트 목록 코드 생략 -->
                     </div>
                 </div>
             </div>
         </div>
-
         <script
             src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
             crossorigin="anonymous"
         ></script>
         <script>
+            var postCount = 10;
             let isLoggedIn = false; // 로그인 상태에 따라 true 또는 false로 설정
+            var userdata;
 
             function showPage(isLoggedIn) {
                 const profilePage = document.querySelector("#profilePage");
                 const loginButton = document.querySelector("#loginButton");
                 const signupButton = document.querySelector("#signupButton");
                 const logoutButton = document.querySelector("#logoutButton");
-                const postList = document.querySelector("#postList");
 
                 if (isLoggedIn) {
                     // 로그인 상태인 경우
@@ -156,14 +160,12 @@
                     loginButton.classList.add("hidden");
                     signupButton.classList.add("hidden");
                     logoutButton.classList.remove("hidden");
-                    postList.classList.remove("hidden");
                 } else {
                     // 로그인 상태가 아닌 경우
                     profilePage.classList.add("hidden");
                     loginButton.classList.remove("hidden");
                     signupButton.classList.remove("hidden");
                     logoutButton.classList.add("hidden");
-                    postList.classList.add("hidden");
                 }
             }
             // 로그인 상태 확인 API 호출
@@ -175,7 +177,7 @@
                     }
                     const data = await response.json();
 
-                    console.log(data)
+                    console.log(data);
 
                     if (data.isLoggedIn) {
                         isLoggedIn = true;
@@ -199,8 +201,6 @@
                     const response = await fetch("/api/profile");
                     const data = await response.json();
 
-                    console.log(data);
-
                     if (response.ok) {
                         // 프로필 정보 업데이트
                         const profileName =
@@ -213,6 +213,7 @@
                         profileName.textContent = data.name;
                         profileBio.textContent = data.bio;
                         profileUserId.textContent = data.user_id;
+                        userdata = data;
                     } else {
                         console.error(data.message);
                     }
@@ -221,8 +222,88 @@
                 }
             }
 
+            function btn_PostClick() {
+                // 입력값 가져오기
+                const content = editor.getHTML();
+
+                console.log(content);
+
+                // 요청 데이터 생성
+                const requestData = {
+                    content: content,
+                };
+
+                // POST 요청 보내기
+                fetch("/create-post", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(requestData),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        console.log("Post creation result:", data.message);
+                        // 원하는 동작 수행 (예: 메시지 출력, 페이지 리로드 등)
+                    })
+                    .catch((error) => {
+                        console.error("Error creating post:", error);
+                        // 에러 처리
+                    });
+            }
+
             checkLoginStatus();
             fetchProfileInfo();
+
+            document
+                .getElementById("postButton")
+                .addEventListener("click", btn_PostClick);
+        </script>
+        <script>
+            // 포스트 리스트를 채우는 함수
+            // 포스트 리스트를 채우는 함수
+            function fillPostList(posts) {
+                const postList = document.querySelector("#postList");
+
+                // 기존 포스트 리스트 비우기
+                postList.innerHTML = "";
+
+                // 새로운 포스트 리스트 채우기
+                posts.forEach((post) => {
+                    const postElement = document.createElement("div");
+                    postElement.classList.add("card", "mb-3");
+                    postElement.innerHTML = `
+                        <div class="card-body">
+                            <h5 class="card-title">${post.user_name}</h5>
+                            <div class="card-text">${post.content}</div>
+                            <p class="card-text"><small class="text-muted">${post.created_at}</small></p>
+                        </div>
+                        `;
+                    postList.appendChild(postElement);
+                });
+            }
+
+            // 포스트 리스트를 가져오는 함수
+            async function getPosts(count) {
+                try {
+                    console.log("asdf");
+                    const response = await fetch(`/posts?count=${count}`);
+                    console.log(response);
+                    if (!response.ok) {
+                        throw new Error(
+                            "포스트 리스트를 가져오는데 실패했습니다."
+                        );
+                    }
+                    const posts = await response.json();
+                    console.log(posts);
+                    fillPostList(posts);
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+
+            // 초기 포스트 리스트 가져오기
+            getPosts(postCount);
         </script>
     </body>
 </html>

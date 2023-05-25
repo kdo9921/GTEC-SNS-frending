@@ -82,6 +82,35 @@ app.get("/register", (req, res) => {
     res.sendFile(__dirname + "/register.html");
 });
 
+app.post("/create-post", async (req, res) => {
+    const { content } = req.body;
+
+    try {
+        // DB 연결
+        await sql.connect(config);
+
+        console.log(req.session.user.user_id)
+        console.log(content)
+
+        // 프로시저 호출
+        const result = await sql.query(`
+        DECLARE @p_message VARCHAR(100);
+        EXEC CreatePost @p_user_id = '${req.session.user.user_id}', @p_content = '${content}', @p_message = @p_message OUTPUT;
+        SELECT @p_message AS message;
+      `);
+
+        // 결과 반환
+        const message = result.recordset[0].message;
+        res.status(200).json({ message });
+    } catch (error) {
+        console.error("Error creating post:", error);
+        res.status(500).json({ error: "Failed to create post" });
+    } finally {
+        // DB 연결 종료
+        sql.close();
+    }
+});
+
 // 로그인 요청 처리
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
@@ -141,7 +170,7 @@ app.get("/api/profile", checkLoginStatus, (req, res) => {
         const profileInfo = {
             user_id: user.user_id,
             name: user.name,
-            bio: user.bio
+            bio: user.bio,
         };
         res.json(profileInfo);
     } else {
@@ -153,12 +182,11 @@ app.get("/api/profile", checkLoginStatus, (req, res) => {
 // 로그인 확인 API
 app.get("/api/check-login", (req, res) => {
     if (req.session.isLoggedIn) {
-      res.json({ isLoggedIn: true, username: req.session.user.name });
+        res.json({ isLoggedIn: true, username: req.session.user.name });
     } else {
-      res.json({ isLoggedIn: false, username: null });
+        res.json({ isLoggedIn: false, username: null });
     }
-  });
-  
+});
 
 // 로그아웃 처리
 app.get("/logout", (req, res) => {
@@ -171,9 +199,56 @@ app.get("/logout", (req, res) => {
     });
 });
 
+// GET 요청을 처리하는 핸들러
+app.get('/posts', async (req, res) => {
+    // 최근 n개의 게시글을 요청 파라미터에서 가져오기 (기본값은 10)
+    const count = (req.query.count || 10)
+    
+
+    try {
+        // DB 연결
+        await sql.connect(config);
+
+        const result = await sql.query(`
+        EXEC GetPost
+          @p_cnt = ${count}
+      `);
+        console.log(result.recordset);
+        //const { user_name, content, post_time } = result.recordset[0];
+        
+        res.json(result.recordset);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("서버 오류가 발생했습니다.");
+    } finally {
+        // DB 연결 종료
+        await sql.close();
+    }
+  });
+  
+
 // 회원가입 요청 처리
 app.post("/register", upload.single("profileImage"), async (req, res) => {
-    const { username, password, user_name, bio, student_id } = req.body;
+    const { userid, password, user_name, bio, student_id } = req.body;
+
+    if (userid.length < 4) {
+        res.status(400).send("아이디가 너무 짧습니다 (최소 4자 이상)");
+    } else if (!/^[a-zA-Z0-9_]+$/.test(userid)) {
+        res.status(400).send("아이디에 알파벳, 숫자, 언더바 이외의 특수문자가 포함되었습니다");
+    }
+
+    if (password.length < 6) {
+        res.status(400).send("아이디가 너무 짧습니다 (최소 6자 이상)");
+    }
+
+    if (userid.length < 4) {
+        res.status(400).send("사용자 이름이 너무 짧습니다 (최소 4자 이상)");
+    } else if (!/^[\wㄱ-힣]+$/.test(user_name)) {
+        res.status(400).send("사용자 이름에 알파벳, 숫자, 언더바, 한글 이외의 문자가 포함되었습니다");
+    }
+    
+    
 
     let profileImage = null;
     if (req.file) {
@@ -192,7 +267,7 @@ app.post("/register", upload.single("profileImage"), async (req, res) => {
         DECLARE @errorMessage NVARCHAR(200);
   
         EXEC RegisterUser
-          @username = '${username}',
+          @userid = '${userid}',
           @password = '${password}',
           @user_name = '${user_name}',
           @bio = '${bio}',
@@ -232,7 +307,6 @@ app.get("/dashboard", (req, res) => {
         res.redirect("/login");
     }
 });
-
 
 // 서버 실행
 app.listen(3000, () => {
