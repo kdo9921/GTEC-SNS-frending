@@ -132,13 +132,13 @@ app.post("/create-post", async (req, res) => {
         const result = await request.execute("CreatePost");
 
         // 결과 반환
-        const message = result.recordset[0].message;
+        const message = result.output.p_message;
         res.status(200).json({ message });
     } catch (error) {
-        console.error("Error creating post:", error);
-        res.status(500).json({ error: "Failed to create post" });
+        console.error("게시글 작성 실패:", error);
+        res.status(500).json({ message: "게시글 작성에 실패하였습니다." });
     } finally {
-        // DB 연결 종료
+    // DB 연결 종료
         sql.close();
     }
 });
@@ -190,6 +190,31 @@ const checkLoginStatus = (req, res, next) => {
         res.redirect("/login");
     }
 };
+
+// 로그인 요청 처리
+app.post("/report", async (req, res) => {
+    const { postId } = req.body;
+
+    try {
+        // DB 연결
+        await sql.connect(config);
+
+        // 로그인 프로시저 호출
+        const request = new sql.Request();
+        request.input("p_user_id", sql.VarChar(50), req.session.user.user_id);
+        request.input("p_post_id", sql.Int, postId);
+
+        await request.execute("Report");
+
+        res.status(200).send("신고 접수");
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("서버 오류가 발생했습니다.");
+    } finally {
+        // DB 연결 종료
+        await sql.close();
+    }
+});
 
 // 프로필 페이지 요청 처리
 app.get("/api/profile", checkLoginStatus, (req, res) => {
@@ -293,12 +318,12 @@ app.post("/register", async (req, res) => {
         request.output("registerSuccess", sql.Bit);
         request.output("errorMessage", sql.NVarChar(200));
 
-        await request.execute("RegisterUser");
+        const result = await request.execute("RegisterUser");
+
+        const { registerSuccess, errorMessage } = result.output;
 
         // 회원가입 결과 처리
-        const { registerSuccess, errorMessage } = result.recordset[0];
-        console.log(result);
-        console.log(registerSuccess);
+
         if (registerSuccess) {
             // 회원가입 성공
             res.status(200).send("회원가입이 성공적으로 완료되었습니다.");

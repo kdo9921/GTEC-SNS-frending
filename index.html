@@ -21,12 +21,13 @@
         <style>
             #postList img {
                 max-width: 100%;
-            } 
+            }
             .hidden {
                 display: none;
             }
         </style>
         <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+        <script src="main.js"></script>
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -47,16 +48,6 @@
                     <ul class="navbar-nav ml-auto">
                         <li class="nav-item">
                             <a class="nav-link" href="./index.html">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="./profile.html"
-                                >Profile</a
-                            >
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="./messages.html"
-                                >Messages</a
-                            >
                         </li>
                         <li class="nav-item">
                             <a
@@ -130,37 +121,6 @@
                                 </button>
                             </div>
                         </div>
-                        <script>
-                            const Editor = toastui.Editor;
-
-                            const editor = new Editor({
-                                el: document.querySelector("#editor"),
-                                height: "300px",
-                                initialEditType: "markdown",
-                                previewStyle: "vertical",
-                                hooks: {
-                                    addImageBlobHook: (blob, callback) => {
-                                        const formData = new FormData();
-                                        formData.append("image", blob);
-
-                                        const xhr = new XMLHttpRequest();
-                                        xhr.open("POST", "/upload");
-                                        xhr.onload = function () {
-                                            if (xhr.status === 200) {
-                                                const response = JSON.parse(
-                                                    xhr.responseText
-                                                );
-                                                const imageName = response.imageName;
-                                                callback(`/uploads/${imageName}`, imageName);
-                                            } else {
-                                                callback('image_load_fail', '이미지 로드 실패');
-                                            }
-                                        };
-                                        xhr.send(formData);
-                                    },
-                                },
-                            });
-                        </script>
                     </div>
                     <!-- 포스트 리스트 -->
                     <div id="postList" class="mb-4">
@@ -174,192 +134,5 @@
             integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
             crossorigin="anonymous"
         ></script>
-        <script>
-            var postCount = 10;
-            let isLoggedIn = false; // 로그인 상태에 따라 true 또는 false로 설정
-            var userdata;
-
-            function showPage(isLoggedIn) {
-                const profilePage = document.querySelector("#profilePage");
-                const loginSignupCard =
-                    document.querySelector("#loginSignupCard");
-                const logoutButton = document.querySelector("#logoutButton");
-                const newPost = document.querySelector("#newPost");
-
-                if (isLoggedIn) {
-                    // 로그인 상태인 경우
-                    profilePage.classList.remove("hidden");
-                    loginSignupCard.classList.add("hidden");
-                    logoutButton.classList.remove("hidden");
-                    newPost.classList.remove("hidden");
-                } else {
-                    // 로그인 상태가 아닌 경우
-                    profilePage.classList.add("hidden");
-                    loginSignupCard.classList.remove("hidden");
-                    logoutButton.classList.add("hidden");
-                    newPost.classList.add("hidden");
-                }
-            }
-            // 로그인 상태 확인 API 호출
-            async function checkLoginStatus() {
-                try {
-                    const response = await fetch("/api/check-login");
-                    if (!response.ok) {
-                        throw new Error("로그인 상태 확인에 실패했습니다.");
-                    }
-                    const data = await response.json();
-
-                    if (data.isLoggedIn) {
-                        isLoggedIn = true;
-                    } else {
-                        isLoggedIn = false;
-                    }
-
-                    showPage(isLoggedIn);
-                } catch (error) {
-                    console.error(error);
-                    isLoggedIn = false;
-                    showPage(isLoggedIn);
-                }
-            }
-
-            // 프로필 정보 요청 처리
-            async function fetchProfileInfo() {
-                try {
-                    const response = await fetch("/api/profile");
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        // 프로필 정보 업데이트
-                        const profileName =
-                            document.querySelector("#profileName");
-                        const profileBio =
-                            document.querySelector("#profileBio");
-                        const profileUserId =
-                            document.querySelector("#profileUserId");
-
-                        profileName.textContent = data.name;
-                        profileBio.textContent = data.bio;
-                        profileUserId.textContent = data.user_id;
-                        userdata = data;
-                    } else {
-                        console.error(data.message);
-                    }
-                } catch (error) {
-                    console.log("error");
-                }
-            }
-
-            function btn_PostClick() {
-                // 입력값 가져오기
-                const content = editor.getHTML();
-
-                // 요청 데이터 생성
-                const requestData = {
-                    content: content,
-                };
-
-                // POST 요청 보내기
-                fetch("/create-post", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(requestData),
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        console.log("Post creation result:", data.message);
-                        // 원하는 동작 수행 (예: 메시지 출력, 페이지 리로드 등)
-                    })
-                    .catch((error) => {
-                        console.error("Error creating post:", error);
-                        // 에러 처리
-                    });
-
-                getPosts(postCount);
-            }
-
-            checkLoginStatus();
-            fetchProfileInfo();
-
-            document
-                .getElementById("postButton")
-                .addEventListener("click", btn_PostClick);
-        </script>
-        <script>
-            // 포스트 리스트를 채우는 함수
-            // 포스트 리스트를 채우는 함수
-            function fillPostList(posts) {
-                const postList = document.querySelector("#postList");
-
-                // 기존 포스트 리스트 비우기
-                postList.innerHTML = "";
-
-                // 새로운 포스트 리스트 채우기
-                posts.forEach((post) => {
-                    const postElement = document.createElement("div");
-                    postElement.classList.add("card", "mb-3");
-                    postElement.innerHTML = `
-                        <div class="card-body">
-                            <h5 class="card-title">${post.user_name}</h5>
-                            <div class="card-text">${post.content}</div>
-                            <p class="card-text"><small class="text-muted">${post.created_at}</small></p>
-                        </div>
-                        `;
-                    postList.appendChild(postElement);
-                });
-            }
-
-            let canLoadPosts = true;
-
-            // 포스트 리스트를 가져오는 함수
-            async function getPosts(count) {
-                if (!canLoadPosts) {
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/posts?count=${count}`);
-
-                    if (!response.ok) {
-                        throw new Error(
-                            "포스트 리스트를 가져오는데 실패했습니다."
-                        );
-                    }
-                    const posts = await response.json();
-
-                    if (posts.length == count);
-                    {
-                        postCount += 5;
-                    }
-
-                    fillPostList(posts);
-                } catch (error) {
-                    console.log(error);
-                }
-
-                canLoadPosts = false;
-
-                setTimeout(() => {
-                    canLoadPosts = true;
-                }, 3000);
-            }
-
-            // 초기 포스트 리스트 가져오기
-            getPosts(postCount);
-
-            window.onscroll = function () {
-                // 스크롤이 페이지의 아래쪽에 도달하면 getPosts() 함수를 호출합니다.
-                if (
-                    window.innerHeight + window.pageYOffset >=
-                    document.documentElement.scrollHeight
-                ) {
-                    getPosts(postCount);
-                }
-            };
-
-            // 이미지 처리
-        </script>
     </body>
 </html>
