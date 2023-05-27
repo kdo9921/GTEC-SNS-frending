@@ -19,8 +19,9 @@
             href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"
         />
         <style>
-            /* 스타일 코드 생략 */
-            /* 새로 추가한 스타일 */
+            #postList img {
+                max-width: 100%;
+            } 
             .hidden {
                 display: none;
             }
@@ -58,7 +59,10 @@
                             >
                         </li>
                         <li class="nav-item">
-                            <a id="logoutButton" class="nav-link" href="./logout"
+                            <a
+                                id="logoutButton"
+                                class="nav-link"
+                                href="./logout"
                                 >Logout</a
                             >
                         </li>
@@ -134,12 +138,33 @@
                                 height: "300px",
                                 initialEditType: "markdown",
                                 previewStyle: "vertical",
+                                hooks: {
+                                    addImageBlobHook: (blob, callback) => {
+                                        const formData = new FormData();
+                                        formData.append("image", blob);
+
+                                        const xhr = new XMLHttpRequest();
+                                        xhr.open("POST", "/upload");
+                                        xhr.onload = function () {
+                                            if (xhr.status === 200) {
+                                                const response = JSON.parse(
+                                                    xhr.responseText
+                                                );
+                                                const imageName = response.imageName;
+                                                callback(`/uploads/${imageName}`, imageName);
+                                            } else {
+                                                callback('image_load_fail', '이미지 로드 실패');
+                                            }
+                                        };
+                                        xhr.send(formData);
+                                    },
+                                },
                             });
                         </script>
                     </div>
                     <!-- 포스트 리스트 -->
                     <div id="postList" class="mb-4">
-                        <!-- 포스트 목록 코드 생략 -->
+                        <!-- 포스트 목록 -->
                     </div>
                 </div>
             </div>
@@ -156,7 +181,8 @@
 
             function showPage(isLoggedIn) {
                 const profilePage = document.querySelector("#profilePage");
-                const loginSignupCard = document.querySelector("#loginSignupCard");
+                const loginSignupCard =
+                    document.querySelector("#loginSignupCard");
                 const logoutButton = document.querySelector("#logoutButton");
                 const newPost = document.querySelector("#newPost");
 
@@ -332,6 +358,8 @@
                     getPosts(postCount);
                 }
             };
+
+            // 이미지 처리
         </script>
     </body>
 </html>

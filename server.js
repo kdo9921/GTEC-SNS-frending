@@ -4,26 +4,12 @@ const bodyParser = require("body-parser");
 const session = require("express-session");
 const sql = require("mssql");
 const multer = require("multer");
-const upload = multer({
-    dest: "uploads/",
-    fileFilter: (req, file, cb) => {
-        // 파일 사이즈 제한 (20MB 이하)
-        const maxSize = 20 * 1024 * 1024; // 20MB
-        if (file.size > maxSize) {
-            return cb(new Error("파일 사이즈는 20MB 이하만 허용됩니다."));
-        }
-
-        // 파일 유형 제한 (이미지 파일만 허용)
-        if (!file.mimetype.startsWith("image/")) {
-            return cb(new Error("이미지 파일만 허용됩니다."));
-        }
-
-        // 파일 허용
-        cb(null, true);
-    },
+const sanitizeHtml = require("sanitize-html");
+const storage = multer.diskStorage({
+    destination: "uploads", // 저장할 폴더 경로
     filename: (req, file, cb) => {
-        // 유저 아이디와 현재 시간으로 파일 이름 생성
-        const userId = req.body.username; // 예시: 유저 아이디는 username으로 전달받음
+        // 파일 이름 설정 로직
+        const userId = req.session.user.user_id;
         const currentTime = Date.now();
         const fileExtension = file.originalname.split(".").pop(); // 파일 확장자
 
@@ -32,6 +18,25 @@ const upload = multer({
         cb(null, fileName);
     },
 });
+
+const fileFilter = (req, file, cb) => {
+    // 파일 사이즈 제한 (20MB 이하)
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (file.size > maxSize) {
+        return cb(new Error("파일 사이즈는 20MB 이하만 허용됩니다."));
+    }
+
+    // 파일 유형 제한 (이미지 파일만 허용)
+    if (!file.mimetype.startsWith("image/")) {
+        return cb(new Error("이미지 파일만 허용됩니다."));
+    }
+
+    // 파일 허용
+    cb(null, true);
+};
+
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+
 // Express.js 애플리케이션 생성
 const app = express();
 
@@ -85,20 +90,46 @@ app.get("/register", (req, res) => {
 app.post("/create-post", async (req, res) => {
     const { content } = req.body;
 
+    // 입력된 HTML을 필터링하여 특정 태그만 허용
+    const filteredHtml = sanitizeHtml(content, {
+        allowedTags: [
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "br",
+            "strong",
+            "em",
+            "del",
+            "hr",
+            "ol",
+            "ul",
+            "li",
+            "a",
+            "img",
+            "pre",
+            "code",
+        ], // 필터링에서 허용할 태그 목록
+    });
+
+    if (filteredHtml.length == 0) {
+        return;
+    }
+
     try {
         // DB 연결
         await sql.connect(config);
 
-        console.log(`create-post 요청!\nid : ${req.session.user.user_id}, content : ${content}`)
-
         // 프로시저 호출
-        const result = await sql.query(`
-        DECLARE @p_message VARCHAR(100);
-        EXEC CreatePost @p_user_id = '${req.session.user.user_id}', @p_content = '${content}', @p_message = @p_message OUTPUT;
-        SELECT @p_message AS message;
-      `);
+        const request = new sql.Request();
+        request.input("p_user_id", sql.VarChar(50), req.session.user.user_id);
+        request.input("p_content", sql.NVarChar(4000), filteredHtml);
+        request.output("p_message", sql.VarChar(100));
 
-      console.log(result)
+        const result = await request.execute("CreatePost");
 
         // 결과 반환
         const message = result.recordset[0].message;
@@ -121,15 +152,13 @@ app.post("/login", async (req, res) => {
         await sql.connect(config);
 
         // 로그인 프로시저 호출
-        const result = await sql.query(`
-      EXEC LoginUser
-        @userid = '${userid}',
-        @password = '${password}';
-    `);
+        const request = new sql.Request();
+        request.input("userid", sql.VarChar(50), userid);
+        request.input("password", sql.VarChar(128), password);
+
+        const result = await request.execute("LoginUser");
 
         const userData = result.recordset[0];
-
-        console.log(userData);
 
         if (userData) {
             // 로그인 성공 시 세션에 사용자 정보 저장
@@ -189,26 +218,22 @@ app.get("/api/check-login", (req, res) => {
     }
 });
 
-app.get('/logout', (req, res) => {
+app.get("/logout", (req, res) => {
     // 세션 정보 삭제
     req.session.destroy((err) => {
-      if (err) {
-        console.error('세션 삭제 실패:', err);
-      } else {
-        console.log('로그아웃 성공');
-      }
-      // 로그아웃 후 리다이렉트 등 필요한 동작 수행
-      res.redirect('/'); // 로그아웃 후 리다이렉트할 경로 설정
+        if (err) {
+            console.error("세션 삭제 실패:", err);
+        }
+        // 로그아웃 후 리다이렉트 등 필요한 동작 수행
+        res.redirect("/"); // 로그아웃 후 리다이렉트할 경로 설정
     });
-  });
+});
 
 // GET 요청을 처리하는 핸들러
-app.get('/posts', async (req, res) => {
+app.get("/posts", async (req, res) => {
     // 최근 n개의 게시글을 요청 파라미터에서 가져오기 (기본값은 10)
-    const count = (req.query.count || "10")
-    
-    console.log(req.query.count)
-    console.log(count);
+    const count = req.query.count || "10";
+
     try {
         // DB 연결
         await sql.connect(config);
@@ -219,9 +244,8 @@ app.get('/posts', async (req, res) => {
       `);
 
         //const { user_name, content, post_time } = result.recordset[0];
-        
-        res.json(result.recordset);
 
+        res.json(result.recordset);
     } catch (error) {
         console.error(error);
         res.status(500).send("서버 오류가 발생했습니다.");
@@ -229,17 +253,18 @@ app.get('/posts', async (req, res) => {
         // DB 연결 종료
         await sql.close();
     }
-  });
-  
+});
 
 // 회원가입 요청 처리
-app.post("/register", upload.single("profileImage"), async (req, res) => {
+app.post("/register", async (req, res) => {
     const { userid, password, user_name, bio, student_id } = req.body;
-    console.log(req.body)
+
     if (userid.length < 4) {
         res.status(400).send("아이디가 너무 짧습니다 (최소 4자 이상)");
     } else if (!/^[a-zA-Z0-9_]+$/.test(userid)) {
-        res.status(400).send("아이디에 알파벳, 숫자, 언더바 이외의 특수문자가 포함되었습니다");
+        res.status(400).send(
+            "아이디에 알파벳, 숫자, 언더바 이외의 특수문자가 포함되었습니다"
+        );
     }
 
     if (password.length < 6) {
@@ -249,16 +274,9 @@ app.post("/register", upload.single("profileImage"), async (req, res) => {
     if (userid.length < 4) {
         res.status(400).send("사용자 이름이 너무 짧습니다 (최소 4자 이상)");
     } else if (!/^[\wㄱ-힣]+$/.test(user_name)) {
-        res.status(400).send("사용자 이름에 알파벳, 숫자, 언더바, 한글 이외의 문자가 포함되었습니다");
-    }
-    
-    
-
-    let profileImage = null;
-    if (req.file) {
-        const uploadedFileName = req.file.filename;
-        // 업로드된 파일의 이름을 활용한 로직 처리
-        // ...
+        res.status(400).send(
+            "사용자 이름에 알파벳, 숫자, 언더바, 한글 이외의 문자가 포함되었습니다"
+        );
     }
 
     try {
@@ -266,29 +284,21 @@ app.post("/register", upload.single("profileImage"), async (req, res) => {
         await sql.connect(config);
 
         // 회원가입 프로시저 호출
-        const result = await sql.query(`
-        DECLARE @registerSuccess BIT;
-        DECLARE @errorMessage NVARCHAR(200);
-  
-        EXEC RegisterUser
-          @userid = '${userid}',
-          @password = '${password}',
-          @user_name = '${user_name}',
-          @bio = '${bio}',
-          @profile_img = ${
-              profileImage ? `0x${profileImage.toString("hex")}` : "NULL"
-          }, -- 프로필 이미지 처리
-          @student_id = '${student_id}',
-          @registerSuccess = @registerSuccess OUTPUT,
-          @errorMessage = @errorMessage OUTPUT;
-  
-        SELECT @registerSuccess AS registerSuccess, @errorMessage AS errorMessage;
-      `);
+        const request = new sql.Request();
+        request.input("userid", sql.VarChar(50), userid);
+        request.input("password", sql.VarChar(128), password);
+        request.input("user_name", sql.NVarChar(50), user_name);
+        request.input("bio", sql.NVarChar(1000), bio);
+        request.input("student_id", sql.VarChar(50), student_id);
+        request.output("registerSuccess", sql.Bit);
+        request.output("errorMessage", sql.NVarChar(200));
+
+        await request.execute("RegisterUser");
 
         // 회원가입 결과 처리
         const { registerSuccess, errorMessage } = result.recordset[0];
-        console.log(result)
-        console.log(registerSuccess)
+        console.log(result);
+        console.log(registerSuccess);
         if (registerSuccess) {
             // 회원가입 성공
             res.status(200).send("회원가입이 성공적으로 완료되었습니다.");
@@ -303,6 +313,15 @@ app.post("/register", upload.single("profileImage"), async (req, res) => {
         // DB 연결 종료
         await sql.close();
     }
+});
+
+app.post("/upload", upload.single("image"), (req, res) => {
+    // 업로드된 이미지 처리
+    const file = req.file;
+
+    // 이미지 파일의 이름을 반환
+    const imageName = file.filename;
+    res.json({ imageName: imageName });
 });
 
 // 서버 실행
