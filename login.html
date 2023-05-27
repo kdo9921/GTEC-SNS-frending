@@ -45,7 +45,7 @@
         <h2>로그인</h2>
         <div class="error-message"></div>
         <div>
-          <input type="text" class="form-control" id="username" placeholder="사용자 이름">
+          <input type="text" class="form-control" id="userid" placeholder="아이디">
         </div>
         <div>
           <input type="password" class="form-control" id="password" placeholder="비밀번호">
@@ -64,7 +64,7 @@
 <script>
   // 로그인 함수
   async function login() {
-    const username = document.getElementById('username').value;
+    const userid = document.getElementById('userid').value;
     const password = document.getElementById('password').value;
 
     // 로그인 요청
@@ -74,7 +74,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ userid, password })
       });
 
       if (response.ok) {

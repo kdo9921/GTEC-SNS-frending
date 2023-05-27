@@ -72,7 +72,7 @@
   document.getElementById('register-form').addEventListener('submit', async (event) => {
     event.preventDefault(); // 폼의 제출 기본 동작 중지
 
-    const username = document.getElementById('username').value;
+    const userid = document.getElementById('userid').value;
     const password = document.getElementById('password').value;
     const user_name = document.getElementById('user-name').value;
     const bio = document.getElementById('bio').value;
@@ -84,7 +84,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password, user_name, bio, student_id })
+        body: JSON.stringify({ userid, password, user_name, bio, student_id })
       });
 
       if (response.ok) {

@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>3조 SNS 예시</title>
+        <title>Frending</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
@@ -30,7 +30,7 @@
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container">
-                <a class="navbar-brand" href="#">3조 SNS</a>
+                <a class="navbar-brand" href="#">Frending</a>
                 <button
                     class="navbar-toggler"
                     type="button"
@@ -58,7 +58,7 @@
                             >
                         </li>
                         <li class="nav-item">
-                            <a id="logoutButton" class="nav-link" href="#"
+                            <a id="logoutButton" class="nav-link" href="./logout"
                                 >Logout</a
                             >
                         </li>
@@ -90,27 +90,33 @@
                             </div>
                         </div>
                     </div>
-                    <!-- 로그인 화면 이동 버튼 -->
-                    <div id="loginButton" class="card">
+                    <!-- 로그인/회원가입 카드 -->
+                    <div id="loginSignupCard" class="card">
                         <div class="card-body text-center">
                             <h5 class="card-title">로그인이 필요합니다.</h5>
-                            <a href="./login.html" class="btn btn-primary"
-                                >로그인</a
-                            >
-                        </div>
-                    </div>
-                    <!-- 회원가입 화면 이동 버튼 -->
-                    <div id="signupButton" class="card">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">회원이 아니신가요?</h5>
-                            <a href="./register.html" class="btn btn-primary"
-                                >회원가입</a
-                            >
+                            <div class="row">
+                                <div class="col">
+                                    <!-- 로그인 화면 이동 버튼 -->
+                                    <a
+                                        href="./login.html"
+                                        class="btn btn-primary btn-block"
+                                        >로그인</a
+                                    >
+                                </div>
+                                <div class="col">
+                                    <!-- 회원가입 화면 이동 버튼 -->
+                                    <a
+                                        href="./register.html"
+                                        class="btn btn-primary btn-block"
+                                        >회원가입</a
+                                    >
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-8">
-                    <div class="card mb-4">
+                    <div id="newPost" class="card mb-4">
                         <div class="card-body">
                             <h5 class="card-title">New Post</h5>
                             <div id="editor"></div>
@@ -150,22 +156,22 @@
 
             function showPage(isLoggedIn) {
                 const profilePage = document.querySelector("#profilePage");
-                const loginButton = document.querySelector("#loginButton");
-                const signupButton = document.querySelector("#signupButton");
+                const loginSignupCard = document.querySelector("#loginSignupCard");
                 const logoutButton = document.querySelector("#logoutButton");
+                const newPost = document.querySelector("#newPost");
 
                 if (isLoggedIn) {
                     // 로그인 상태인 경우
                     profilePage.classList.remove("hidden");
-                    loginButton.classList.add("hidden");
-                    signupButton.classList.add("hidden");
+                    loginSignupCard.classList.add("hidden");
                     logoutButton.classList.remove("hidden");
+                    newPost.classList.remove("hidden");
                 } else {
                     // 로그인 상태가 아닌 경우
                     profilePage.classList.add("hidden");
-                    loginButton.classList.remove("hidden");
-                    signupButton.classList.remove("hidden");
+                    loginSignupCard.classList.remove("hidden");
                     logoutButton.classList.add("hidden");
+                    newPost.classList.add("hidden");
                 }
             }
             // 로그인 상태 확인 API 호출
@@ -177,14 +183,10 @@
                     }
                     const data = await response.json();
 
-                    console.log(data);
-
                     if (data.isLoggedIn) {
                         isLoggedIn = true;
-                        console.log("로그인 성공");
                     } else {
                         isLoggedIn = false;
-                        console.log("로그인 실패");
                     }
 
                     showPage(isLoggedIn);
@@ -226,8 +228,6 @@
                 // 입력값 가져오기
                 const content = editor.getHTML();
 
-                console.log(content);
-
                 // 요청 데이터 생성
                 const requestData = {
                     content: content,
@@ -250,6 +250,8 @@
                         console.error("Error creating post:", error);
                         // 에러 처리
                     });
+
+                getPosts(postCount);
             }
 
             checkLoginStatus();
@@ -283,27 +285,53 @@
                 });
             }
 
+            let canLoadPosts = true;
+
             // 포스트 리스트를 가져오는 함수
             async function getPosts(count) {
+                if (!canLoadPosts) {
+                    return;
+                }
+
                 try {
-                    console.log("asdf");
                     const response = await fetch(`/posts?count=${count}`);
-                    console.log(response);
+
                     if (!response.ok) {
                         throw new Error(
                             "포스트 리스트를 가져오는데 실패했습니다."
                         );
                     }
                     const posts = await response.json();
-                    console.log(posts);
+
+                    if (posts.length == count);
+                    {
+                        postCount += 5;
+                    }
+
                     fillPostList(posts);
                 } catch (error) {
                     console.log(error);
                 }
+
+                canLoadPosts = false;
+
+                setTimeout(() => {
+                    canLoadPosts = true;
+                }, 3000);
             }
 
             // 초기 포스트 리스트 가져오기
             getPosts(postCount);
+
+            window.onscroll = function () {
+                // 스크롤이 페이지의 아래쪽에 도달하면 getPosts() 함수를 호출합니다.
+                if (
+                    window.innerHeight + window.pageYOffset >=
+                    document.documentElement.scrollHeight
+                ) {
+                    getPosts(postCount);
+                }
+            };
         </script>
     </body>
 </html>
