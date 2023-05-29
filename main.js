@@ -1,4 +1,4 @@
-var postCount = 10;
+var postCount = 5;
 let isLoggedIn = false; // 로그인 상태에 따라 true 또는 false로 설정
 var userdata;
 const Editor = toastui.Editor;
@@ -6,12 +6,32 @@ var editor;
 
 function SetEditor() {
     const Editor = toastui.Editor;
+    
+    var theme = 'default'
+    
+    try {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            theme = 'dark'
+        }
+    } catch {
+        theme = 'default'
+    }
+
+    console.log(theme)
 
     editor = new Editor({
         el: document.querySelector("#editor"),
         height: "300px",
         initialEditType: "markdown",
         previewStyle: "vertical",
+        toolbarItems: [
+            ['heading', 'bold', 'italic', 'strike'],
+            ['hr', 'quote'],
+            ['ul', 'ol'],
+            ['code', 'codeblock'],
+            ['link', 'image']
+        ],
+        theme : theme,
         hooks: {
             addImageBlobHook: (blob, callback) => {
                 const formData = new FormData();
@@ -66,6 +86,7 @@ async function checkLoginStatus() {
 
         if (data.isLoggedIn) {
             isLoggedIn = true;
+            fetchProfileInfo();
         } else {
             isLoggedIn = false;
         }
@@ -142,28 +163,31 @@ function btn_PostClick() {
 function fillPostList(posts) {
     const postList = document.querySelector("#postList");
 
-    // 기존 포스트 리스트 비우기
-    postList.innerHTML = "";
+    var postHTML = ''
 
     // 새로운 포스트 리스트 채우기
     posts.forEach((post) => {
-        const postElement = document.createElement("div");
-        postElement.classList.add("card", "mb-3");
-        postElement.innerHTML = `
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">${post.user_name}</h5>
-                <div class="card-text flex-grow-1">${post.content}</div>
-                <div class="d-flex justify-content-between">
-                    <div class="text-muted">${post.created_at}</div>
-                    <div>
-                        <button class="btn btn-danger btn-report" onclick="reportPost(${post.post_id})">신고</button>
+        postHTML += `
+            <div class="card mb-3">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">${post.user_name}</h5>
+                    <div class="card-text flex-grow-1">${post.content}</div>
+                    <div class="d-flex justify-content-between">
+                        <div class="text-muted">${post.created_at}</div>
+                        <div>
+                            <button class="btn btn-danger btn-report" onclick="reportPost(${post.post_id})">신고</button>
+                        </div>
                     </div>
+                    <span class="hidden">${post.post_id}</span>
                 </div>
-                <span class="hidden">${post.post_id}</span>
             </div>
             `;
-        postList.appendChild(postElement);
     });
+
+    postList.innerHTML = postHTML;
+
+    
+
 }
 
 let canLoadPosts = true;
@@ -187,7 +211,12 @@ async function getPosts(count) {
             postCount += 5;
         }
 
+        var scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+
         fillPostList(posts);
+
+        window.scrollTo(0, scrollPosition);
+
     } catch (error) {
         console.log(error);
     }
@@ -196,7 +225,7 @@ async function getPosts(count) {
 
     setTimeout(() => {
         canLoadPosts = true;
-    }, 3000);
+    }, 1000);
 }
 
 // 초기 포스트 리스트 가져오기
@@ -216,7 +245,6 @@ window.onload = function () {
     SetEditor();
 
     checkLoginStatus();
-    fetchProfileInfo();
 
     document
         .getElementById("postButton")
@@ -237,7 +265,11 @@ console.log(`이 메시지를 보고계실 누군가에게.
 `);
 
 function reportPost(postId) {
-    console.log("신고");
+    // 로그인 확인
+    if (!isLoggedIn) {
+        alert("로그인 후 이용해주세요.");
+        return;
+    }
     // 쿠키 확인
     const lastReportTime = getCookie("lastReportTime");
     const currentTime = new Date().getTime();

@@ -1,138 +1,176 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Frending</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<head>
+		<meta charset="utf-8" />
+		<title>Frending</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+			integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+			crossorigin="anonymous"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"
+		/>
         <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
-            crossorigin="anonymous"
-        />
-        <link
-            rel="stylesheet"
-            href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"
-        />
-        <link
-            rel="stylesheet"
-            href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"
-        />
-        <style>
-            #postList img {
-                max-width: 100%;
-            }
-            .hidden {
-                display: none;
-            }
-        </style>
-        <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
-        <script src="main.js"></script>
-    </head>
-    <body>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container">
-                <a class="navbar-brand" href="#">Frending</a>
-                <button
-                    class="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav"
-                    aria-controls="navbarNav"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation"
-                >
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ml-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="./index.html">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a
-                                id="logoutButton"
-                                class="nav-link"
-                                href="./logout"
-                                >Logout</a
-                            >
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-        <div class="container mt-5">
-            <div class="row">
-                <div class="col-md-4">
-                    <!-- 자기소개 페이지 -->
-                    <div id="profilePage" class="card">
-                        <!-- 프로필 정보 -->
-                        <div class="card-body">
-                            <h5 class="card-title">프로필 정보</h5>
-                            <div id="profileInfo">
-                                <p>
-                                    <strong>이름:</strong>
-                                    <span id="profileName"></span>
-                                </p>
-                                <p>
-                                    <strong>소개:</strong>
-                                    <span id="profileBio"></span>
-                                </p>
-                                <p>
-                                    <strong>아이디:</strong>
-                                    <span id="profileUserId"></span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 로그인/회원가입 카드 -->
-                    <div id="loginSignupCard" class="card">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">로그인이 필요합니다.</h5>
-                            <div class="row">
-                                <div class="col">
-                                    <!-- 로그인 화면 이동 버튼 -->
-                                    <a
-                                        href="./login.html"
-                                        class="btn btn-primary btn-block"
-                                        >로그인</a
-                                    >
-                                </div>
-                                <div class="col">
-                                    <!-- 회원가입 화면 이동 버튼 -->
-                                    <a
-                                        href="./register.html"
-                                        class="btn btn-primary btn-block"
-                                        >회원가입</a
-                                    >
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-8">
-                    <div id="newPost" class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">New Post</h5>
-                            <div id="editor"></div>
-                            <div class="text-end mt-2">
-                                <button id="postButton" class="btn btn-primary">
-                                    Post
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 포스트 리스트 -->
-                    <div id="postList" class="mb-4">
-                        <!-- 포스트 목록 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
-            crossorigin="anonymous"
-        ></script>
-    </body>
+			rel="stylesheet"
+			href="./toastui-editor-dark.css"
+		/>
+		<style>
+			body {
+				background-color: #f8f9fa;
+			}
+			#postList img {
+				max-width: 100%;
+			}
+			.hidden {
+				display: none;
+			}
+			.card {
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+			}
+
+			@media (prefers-color-scheme: dark) {
+				body {
+					background-color: #303030;
+					color: #f8f9fa;
+				}
+
+				nav {
+					color: #f8f9fa;
+				}
+
+				.card {
+					background-color: #202020;
+					color: #f8f9fa;
+				}
+
+				.card-title {
+					color: #f8f9fa;
+				}
+
+				.card-text {
+					color: #f8f9fa;
+				}
+
+				.text-muted {
+					color: #6c757d;
+				}
+			}
+		</style>
+		<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+		<script src="main.js"></script>
+	</head>
+	<body>
+		<nav
+			class="navbar navbar-expand-lg navbar-light"
+			style="background-color: #a7bf04"
+		>
+			<div class="container">
+				<a class="navbar-brand" href="#">Frending</a>
+				<button
+					class="navbar-toggler"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#navbarNav"
+					aria-controls="navbarNav"
+					aria-expanded="false"
+					aria-label="Toggle navigation"
+				>
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarNav">
+					<ul class="navbar-nav ml-auto">
+						<li class="nav-item">
+							<a class="nav-link" href="./">Home</a>
+						</li>
+						<li class="nav-item">
+							<a
+								id="logoutButton"
+								class="nav-link"
+								href="./logout"
+								>Logout</a
+							>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<div class="container mt-5">
+			<div class="row">
+				<div class="col-md-4" style="margin-bottom: 16px">
+					<!-- 자기소개 페이지 -->
+					<div id="profilePage" class="card">
+						<!-- 프로필 정보 -->
+						<div class="card-body">
+							<h5 class="card-title">프로필 정보</h5>
+							<div id="profileInfo">
+								<p>
+									<strong>이름:</strong>
+									<span id="profileName"></span>
+								</p>
+								<p>
+									<strong>소개:</strong>
+									<span id="profileBio"></span>
+								</p>
+								<p>
+									<strong>아이디:</strong>
+									<span id="profileUserId"></span>
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- 로그인/회원가입 카드 -->
+					<div id="loginSignupCard" class="card">
+						<div class="card-body text-center">
+							<h5 class="card-title">로그인이 필요합니다.</h5>
+							<div class="row">
+								<div class="col">
+									<!-- 로그인 화면 이동 버튼 -->
+									<a
+										href="./login"
+										class="btn btn-primary btn-block"
+										>로그인</a
+									>
+								</div>
+								<div class="col">
+									<!-- 회원가입 화면 이동 버튼 -->
+									<a
+										href="./register"
+										class="btn btn-primary btn-block"
+										>회원가입</a
+									>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-8">
+					<div id="newPost" class="card mb-4">
+						<div class="card-body">
+							<h5 class="card-title">New Post</h5>
+							<div id="editor"></div>
+							<div class="text-end mt-2">
+								<button id="postButton" class="btn btn-primary">
+									Post
+								</button>
+							</div>
+						</div>
+					</div>
+					<!-- 포스트 리스트 -->
+					<div id="postList" class="mb-4">
+						<!-- 포스트 목록 -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script
+			src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+			crossorigin="anonymous"
+		></script>
+	</body>
 </html>

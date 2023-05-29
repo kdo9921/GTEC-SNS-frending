@@ -5,15 +5,18 @@ const session = require("express-session");
 const sql = require("mssql");
 const multer = require("multer");
 const sanitizeHtml = require("sanitize-html");
+const sharp = require('sharp');
+const fs = require('fs');
 const storage = multer.diskStorage({
     destination: "uploads", // 저장할 폴더 경로
     filename: (req, file, cb) => {
         // 파일 이름 설정 로직
         const userId = req.session.user.user_id;
-        const currentTime = Date.now();
+        const date = new Date(Date.now() + (9 * 60 * 60 * 1000)).toISOString();
+        const formattedDate = date.replace(/[.:]/g, '');
         const fileExtension = file.originalname.split(".").pop(); // 파일 확장자
 
-        const fileName = `${userId}-${currentTime}.${fileExtension}`;
+        const fileName = `${formattedDate}-${userId}.${fileExtension}`;
 
         cb(null, fileName);
     },
@@ -304,6 +307,11 @@ app.post("/register", async (req, res) => {
         );
     }
 
+    // IP 주소 가져오기
+    const ipAddress = req.ip; 
+    // 브라우저 정보 가져오기
+    const browser = req.headers['user-agent'];
+
     try {
         // DB 연결
         await sql.connect(config);
@@ -315,6 +323,8 @@ app.post("/register", async (req, res) => {
         request.input("user_name", sql.NVarChar(50), user_name);
         request.input("bio", sql.NVarChar(1000), bio);
         request.input("student_id", sql.VarChar(50), student_id);
+        request.input("IP_Address", sql.VarChar(255), ipAddress);
+        request.input("Browser_Info", sql.VarChar(255), browser);
         request.output("registerSuccess", sql.Bit);
         request.output("errorMessage", sql.NVarChar(200));
 
@@ -343,10 +353,52 @@ app.post("/register", async (req, res) => {
 app.post("/upload", upload.single("image"), (req, res) => {
     // 업로드된 이미지 처리
     const file = req.file;
-
     // 이미지 파일의 이름을 반환
     const imageName = file.filename;
-    res.json({ imageName: imageName });
+    // 업로드된 이미지 경로
+    const imagePath = req.file.path;
+
+    // 이미지 정보 가져오기
+    sharp(imagePath)
+        .metadata()
+        .then(metadata => {
+            const { width, height } = metadata;
+            
+            // 가로 또는 세로 중 하나라도 2048 이상인 경우에만 비율에 맞춰 이미지 조절
+            if (width >= 2048 || height >= 2048) {
+                const scaleFactor = Math.min(2048 / width, 2048 / height);
+
+                // 이미지 조절 및 압축
+                sharp(imagePath)
+                    .resize(Math.round(width * scaleFactor), Math.round(height * scaleFactor))
+                    .jpeg({ quality: 80 })
+                    .toFile(`uploads/${req.file.filename}-compressed.jpg`, (err, info) => {
+                        if (err) {
+                            console.error(err);
+                            // 에러 처리 로직
+                            return res.status(500).send("이미지 처리 중 오류가 발생했습니다.");
+                        }
+
+                        // 기존 파일 삭제
+                        fs.unlink(imagePath, err => {
+                            if (err) {
+                                console.log(err);
+                                // 에러 처리 로직
+                            }
+                        })
+
+                        res.json({ imageName: `${req.file.filename}-compressed.jpg` });
+                    });
+            } else {
+                // 2048 이하인 경우에는 그대로 저장
+                res.json({ imageName: imageName });
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            // 에러 처리 로직
+            res.status(500).send("이미지 처리 중 오류가 발생했습니다.");
+        });
 });
 
 // 서버 실행

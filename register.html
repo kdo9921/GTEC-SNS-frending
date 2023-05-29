@@ -1,108 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css">
-  <style>
-    body {
-      background-color: #f8f9fa;
-    }
-    .form-container {
-      background-color: #fff;
-      max-width: 400px;
-      margin: 0 auto;
-      padding: 40px;
-      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-      border-radius: 10px;
-      margin-top: 100px;
-    }
-    .form-container h2 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .form-container .form-control {
-      margin-bottom: 20px;
-    }
-    .form-container .btn-primary {
-      width: 100%;
-    }
-  </style>
-  <title>Login Page</title>
-</head>
-<body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css"
+		/>
+		<style>
+			body {
+				background-color: #f8f9fa;
+			}
+			.form-container {
+				background-color: #fff;
+				max-width: 400px;
+				margin: 0 auto;
+				padding: 40px;
+				box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+				border-radius: 10px;
+				margin-top: 100px;
+			}
+			.form-container h2 {
+				text-align: center;
+				margin-bottom: 30px;
+			}
+			.form-container .form-control {
+				margin-bottom: 20px;
+			}
+			.form-container .btn-primary {
+				width: 100%;
+			}
+			.container {
+				padding-bottom: 100px;
+			}
 
-<!-- 회원가입 페이지 -->
-<div class="container">
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="form-container">
-        <h2>회원가입</h2>
-        <div class="error-message"></div>
-        <form id="register-form">
-          <div class="mb-3">
-            <input type="text" class="form-control" id="userid" placeholder="아이디">
-          </div>
-          <div class="mb-3">
-            <input type="password" class="form-control" id="password" placeholder="비밀번호">
-          </div>
-          <div class="mb-3">
-            <input type="text" class="form-control" id="user-name" placeholder="닉네임">
-          </div>
-          <div class="mb-3">
-            <textarea class="form-control" id="bio" placeholder="자기소개"></textarea>
-          </div>
-          <div class="mb-3">
-            <input type="file" class="form-control" id="profile-image" name="profileImage">
-          </div>
-          <div class="mb-3">
-            <input type="text" class="form-control" id="student-id" placeholder="학번">
-          </div>
-          <div class="text-center">
-            <button type="submit" class="btn btn-primary">회원가입</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
+			@media (prefers-color-scheme: dark) {
+				body {
+					background-color: #303030;
+					color: #f8f9fa;
+				}
 
-<script>
-  // 회원가입 폼 제출 이벤트 핸들러
-  document.getElementById('register-form').addEventListener('submit', async (event) => {
-    event.preventDefault(); // 폼의 제출 기본 동작 중지
+				.form-container {
+					background-color: #202020;
+					color: #f8f9fa;
+				}
+			}
+		</style>
+		<title>Login Page</title>
+	</head>
+	<body>
+		<!-- 회원가입 페이지 -->
+		<div class="container">
+			<div class="row justify-content-center">
+				<div class="col-md-6">
+					<div class="form-container">
+						<h2>회원가입</h2>
+						<div
+							class="alert alert-danger error-message"
+							role="alert"
+							style="display: none"
+						></div>
+						<form id="register-form">
+							<div class="mb-3">
+								<label for="userid" class="form-label"
+									>아이디
+									<span class="required">*</span></label
+								>
+								<input
+									type="text"
+									class="form-control"
+									id="userid"
+									placeholder="아이디"
+									required
+								/>
+							</div>
+							<div class="mb-3">
+								<label for="password" class="form-label"
+									>비밀번호
+									<span class="required">*</span></label
+								>
+								<input
+									type="password"
+									class="form-control"
+									id="password"
+									placeholder="비밀번호"
+									required
+								/>
+							</div>
+							<div class="mb-3">
+								<label for="user-name" class="form-label"
+									>닉네임
+									<span class="required">*</span></label
+								>
+								<input
+									type="text"
+									class="form-control"
+									id="user-name"
+									placeholder="닉네임"
+									required
+								/>
+							</div>
+							<div class="mb-3">
+								<label for="student-id" class="form-label"
+									>학번</label
+								>
+								<input
+									type="text"
+									class="form-control"
+									id="student-id"
+									placeholder="학번"
+								/>
+							</div>
+							<div class="mb-3">
+								<label for="bio" class="form-label"
+									>자기소개</label
+								>
+								<textarea
+									class="form-control"
+									id="bio"
+									placeholder="자기소개"
+								></textarea>
+							</div>
+							<div class="text-center">
+								<button type="submit" class="btn btn-primary">
+									회원가입
+								</button>
+								<br /><br />
+								<small>* 표시된 항목은 필수 입력입니다.</small>
+								<br />
+								<small
+									>이용 과정에서 IP 주소와 기기 정보가
+									자동적으로 생성되어 수집될 수 있으며,
+									경기과학기술대학교 교직원의 요청 및
+									형사소송법에 의한 수사기관의 수사자료협조
+									요청 등 법률에 의해 제공될 수
+									있습니다.</small
+								>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
 
-    const userid = document.getElementById('userid').value;
-    const password = document.getElementById('password').value;
-    const user_name = document.getElementById('user-name').value;
-    const bio = document.getElementById('bio').value;
-    const student_id = document.getElementById('student-id').value;
+		<script>
+			// 회원가입 폼 제출 이벤트 핸들러
+			document
+				.getElementById("register-form")
+				.addEventListener("submit", async (event) => {
+					event.preventDefault(); // 폼의 제출 기본 동작 중지
 
-    try {
-      const response = await fetch('/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userid, password, user_name, bio, student_id })
-      });
+					const userid = document.getElementById("userid").value;
+					const password = document.getElementById("password").value;
+					const user_name =
+						document.getElementById("user-name").value;
+					const bio = document.getElementById("bio").value;
+					const student_id =
+						document.getElementById("student-id").value;
 
-      if (response.ok) {
-        // 회원가입 성공 시
-        const message = await response.text();
-        alert(message); // 성공 메시지를 팝업으로 표시하거나 다른 처리를 수행할 수 있습니다.
-        window.location.href = '/login.html'; // 로그인 후 이동할 페이지
-      } else {
-        // 회원가입 실패 시
-        const error = await response.text();
-        document.querySelector('.error-message').textContent = error;
-      }
-    } catch (error) {
-      console.error(error);
-      document.querySelector('.error-message').textContent = '서버 오류가 발생했습니다.';
-    }
-  });
-</script>
+					try {
+						const response = await fetch("/register", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								userid,
+								password,
+								user_name,
+								bio,
+								student_id,
+							}),
+						});
 
-</body>
+						if (response.ok) {
+							// 회원가입 성공 시
+							const message = await response.text();
+							alert(message); // 성공 메시지를 팝업으로 표시하거나 다른 처리를 수행할 수 있습니다.
+							window.location.href = "/login.html"; // 로그인 후 이동할 페이지
+						} else {
+							// 회원가입 실패 시
+							const error = await response.text();
+							document.querySelector(
+								".error-message"
+							).style.display = "block";
+							document.querySelector(
+								".error-message"
+							).textContent = error;
+						}
+					} catch (error) {
+						console.error(error);
+						document.querySelector(".error-message").textContent =
+							"서버 오류가 발생했습니다.";
+					}
+				});
+		</script>
+	</body>
 </html>
