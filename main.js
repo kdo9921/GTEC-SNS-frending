@@ -1,4 +1,4 @@
-var postCount = 5;
+var postCount = 10;
 let isLoggedIn = false; // 로그인 상태에 따라 true 또는 false로 설정
 var userdata;
 const Editor = toastui.Editor;
@@ -173,7 +173,7 @@ function fillPostList(posts) {
                     <h5 class="card-title">${post.user_name}</h5>
                     <div class="card-text flex-grow-1">${post.content}</div>
                     <div class="d-flex justify-content-between">
-                        <div class="text-muted">${post.created_at}</div>
+                        <div class="card-text">${post.created_at}</div>
                         <div>
                             <button class="btn btn-danger btn-report" onclick="reportPost(${post.post_id})">신고</button>
                         </div>
@@ -225,7 +225,7 @@ async function getPosts(count) {
 
     setTimeout(() => {
         canLoadPosts = true;
-    }, 1000);
+    }, 2500);
 }
 
 // 초기 포스트 리스트 가져오기

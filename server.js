@@ -6,6 +6,7 @@ const sql = require("mssql");
 const multer = require("multer");
 const sanitizeHtml = require("sanitize-html");
 const sharp = require('sharp');
+const requestIp = require('request-ip');
 const fs = require('fs');
 const storage = multer.diskStorage({
     destination: "uploads", // 저장할 폴더 경로
@@ -289,26 +290,31 @@ app.post("/register", async (req, res) => {
 
     if (userid.length < 4) {
         res.status(400).send("아이디가 너무 짧습니다 (최소 4자 이상)");
+        return
     } else if (!/^[a-zA-Z0-9_]+$/.test(userid)) {
         res.status(400).send(
             "아이디에 알파벳, 숫자, 언더바 이외의 특수문자가 포함되었습니다"
         );
+        return
     }
 
     if (password.length < 6) {
         res.status(400).send("비밀번호가 너무 짧습니다 (최소 6자 이상)");
+        return
     }
 
     if (userid.length < 4) {
         res.status(400).send("사용자 이름이 너무 짧습니다 (최소 4자 이상)");
+        return
     } else if (!/^[\wㄱ-힣]+$/.test(user_name)) {
         res.status(400).send(
             "사용자 이름에 알파벳, 숫자, 언더바, 한글 이외의 문자가 포함되었습니다"
         );
+        return
     }
 
     // IP 주소 가져오기
-    const ipAddress = req.ip; 
+    const ipAddress = requestIp.getClientIp(req);; 
     // 브라우저 정보 가져오기
     const browser = req.headers['user-agent'];
 
