@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Frending</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+			integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+			crossorigin="anonymous"
+		/>
+		<style>
+			body {
+				background-color: #f8f9fa;
+			}
+			#postList img {
+				max-width: 100%;
+			}
+			.hidden {
+				display: none;
+			}
+			.card {
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+			}
+
+            a:link, a:visited {
+                color: black;
+                text-decoration: none;
+            }
+
+			@media (prefers-color-scheme: dark) {
+				body {
+					background-color: #303030;
+					color: #f8f9fa;
+				}
+
+				nav {
+					color: #f8f9fa;
+				}
+
+				.card {
+					background-color: #202020;
+					color: #f8f9fa;
+				}
+
+				.card-title {
+					color: #f8f9fa;
+				}
+
+				.card-text {
+					color: #f8f9fa;
+				}
+
+				.text-muted {
+					color: #6c757d;
+				}
+
+                a:link, a:visited {
+                    color: #f8f9fa;
+                    text-decoration: none;
+                }
+			}
+		</style>
+        <script>
+            function showPage(isLoggedIn) {
+                const profilePage = document.querySelector("#profilePage");
+                const loginSignupCard = document.querySelector("#loginSignupCard");
+                const logoutButton = document.querySelector("#logoutButton");
+                const newPost = document.querySelector("#newPost");
+
+                if (isLoggedIn) {
+                    // 로그인 상태인 경우
+                    profilePage.classList.remove("hidden");
+                    loginSignupCard.classList.add("hidden");
+                    logoutButton.classList.remove("hidden");
+                } else {
+                    // 로그인 상태가 아닌 경우
+                    profilePage.classList.add("hidden");
+                    loginSignupCard.classList.remove("hidden");
+                    logoutButton.classList.add("hidden");
+                }
+            }
+
+            // 로그인 상태 확인 API 호출
+            async function checkLoginStatus() {
+                try {
+                    const response = await fetch("/api/check-login");
+                    if (!response.ok) {
+                        throw new Error("로그인 상태 확인에 실패했습니다.");
+                    }
+                    const data = await response.json();
+
+                    if (data.isLoggedIn) {
+                        isLoggedIn = true;
+                        fetchProfileInfo();
+                    } else {
+                        isLoggedIn = false;
+                    }
+
+                    showPage(isLoggedIn);
+                } catch (error) {
+                    console.error(error);
+                    isLoggedIn = false;
+                    showPage(isLoggedIn);
+                }
+            }
+
+            async function fetchProfileInfo() {
+                try {
+                    const response = await fetch("/api/profile");
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // 프로필 정보 업데이트
+                        const profileName = document.querySelector("#profileName");
+                        const profileBio = document.querySelector("#profileBio");
+                        const profileUserId = document.querySelector("#profileUserId");
+
+                        profileName.textContent = data.name;
+                        profileBio.textContent = data.bio;
+                        profileUserId.textContent = data.user_id;
+                        userdata = data;
+                    } else {
+                        console.error(data.message);
+                    }
+                } catch (error) {
+                    console.log("error");
+                }
+            }
+
+            async function fetchUserInfo() {
+                // 현재 URL에서 userId 추출
+                const userId = window.location.pathname.split("/")[2];
+
+                try {
+                    const response = await fetch(`/api/user/${userId}`);
+                    const data = await response.json();
+                    
+                    console.log(data)
+
+                    // 데이터를 페이지에 표시 (예: 이름과 나이)
+                    document.getElementById("userId").innerText = '@' + data.user_id;
+                    document.getElementById("userName").innerText = data.user_name;
+                    document.getElementById("userBio").innerText = data.bio;
+                } catch (error) {
+                    document.getElementById("userId").innerText = '@' + userId;
+                    document.getElementById("userName").innerText = '사용자 정보 없음';
+                    document.getElementById("userBio").innerText = '사용자 정보 조회 실패';
+                    console.error("Error fetching user data:", error);
+                }
+            }
+
+            window.onload = async function() {
+                fetchProfileInfo();
+                checkLoginStatus();
+                fetchUserInfo();
+            }
+        </script>
+	</head>
+	<body>
+		<nav
+			class="navbar navbar-expand-lg navbar-light"
+			style="background-color: #a7bf04"
+		>
+			<div class="container">
+				<a class="navbar-brand" href="/">Frending</a>
+				<button
+					class="navbar-toggler"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#navbarNav"
+					aria-controls="navbarNav"
+					aria-expanded="false"
+					aria-label="Toggle navigation"
+				>
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarNav">
+					<ul class="navbar-nav ml-auto">
+						<li class="nav-item">
+							<a class="nav-link" href="/">Home</a>
+						</li>
+						<li class="nav-item">
+							<a
+								id="logoutButton"
+								class="nav-link"
+								href="/logout"
+								>Logout</a
+							>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<div class="container mt-5">
+			<div class="row">
+				<div class="col-md-4" style="margin-bottom: 16px">
+					<!-- 자기소개 페이지 -->
+					<div id="profilePage" class="card">
+						<!-- 프로필 정보 -->
+						<div class="card-body">
+							<h5 class="card-title">프로필 정보</h5>
+							<div id="profileInfo">
+								<p>
+									<strong>이름:</strong>
+									<span id="profileName"></span>
+								</p>
+								<p>
+									<strong>소개:</strong>
+									<span id="profileBio"></span>
+								</p>
+								<p>
+									<strong>아이디:</strong>
+									<span id="profileUserId"></span>
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- 로그인/회원가입 카드 -->
+					<div id="loginSignupCard" class="card">
+						<div class="card-body text-center">
+							<h5 class="card-title">로그인이 필요합니다.</h5>
+							<div class="row">
+								<div class="col">
+									<!-- 로그인 화면 이동 버튼 -->
+									<a
+										href="/login"
+										class="btn btn-primary btn-block"
+										>로그인</a
+									>
+								</div>
+								<div class="col">
+									<!-- 회원가입 화면 이동 버튼 -->
+									<a
+										href="/register"
+										class="btn btn-primary btn-block"
+										>회원가입</a
+									>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-8">
+					<div class="card mb-4">
+                        <div class="card-body">
+                            <h1>사용자 정보</h1>
+                            <h2 id="userName"></h2>
+                            <span id="userId"></span>
+                            <p>
+                                <strong>소개:</strong>
+                                <span id="userBio"></span>
+                            </p>
+                        </div>     
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script
+			src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+			crossorigin="anonymous"
+		></script>
+	</body>
+</html>

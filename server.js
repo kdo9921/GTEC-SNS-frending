@@ -195,8 +195,14 @@ const checkLoginStatus = (req, res, next) => {
     }
 };
 
-// 유저 정보
-app.get('/user/:userId', async (req, res) => {
+// 로그인 페이지 렌더링
+app.get("/user/:userId", (req, res) => {
+    res.sendFile(__dirname + "/user.html");
+});
+
+// 유저 정보 api
+app.get('/api/user/:userId', async (req, res) => {
+    console.log("asdf");
     try {
         const userId = req.params.userId;
     
@@ -315,9 +321,6 @@ app.get("/posts", async (req, res) => {
 // 팔로우 요청 처리
 app.post("/follow", async (req, res) => {
     const { userId} = req.body;
-
-    console.log(req.session.user.user_id)
-    console.log(userId)
 
     try {
         // DB 연결

@@ -22,7 +22,7 @@ function SetEditor() {
 
     editor = new Editor({
         el: document.querySelector("#editor"),
-        height: "300px",
+        height: "400px",
         initialEditType: "markdown",
         previewStyle: "vertical",
         toolbarItems: [
@@ -172,7 +172,7 @@ function fillPostList(posts) {
         postHTML += `
             <div class="card mb-3">
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">${post.user_name} (@${post.user_id})</h5>
+                    <h5 class="card-title"><a href='/user/${post.user_id}'>${post.user_name} (@${post.user_id})</a></h5>
                     <div class="card-text flex-grow-1">${post.content}</div>
                     <div class="d-flex justify-content-between">
                         <div class="card-text">${post.created_at}</div>
