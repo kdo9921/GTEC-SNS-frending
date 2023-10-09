@@ -1,5 +1,6 @@
 var postCount = 10;
 let isLoggedIn = false; // 로그인 상태에 따라 true 또는 false로 설정
+let canLoadPosts = true;
 var userdata;
 const Editor = toastui.Editor;
 var editor;
@@ -156,6 +157,7 @@ function btn_PostClick() {
         });
 
     editor.setMarkdown("");
+    canLoadPosts = true;
     getPosts(postCount);
 }
 
@@ -170,12 +172,13 @@ function fillPostList(posts) {
         postHTML += `
             <div class="card mb-3">
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">${post.user_name}</h5>
+                    <h5 class="card-title">${post.user_name} (@${post.user_id})</h5>
                     <div class="card-text flex-grow-1">${post.content}</div>
                     <div class="d-flex justify-content-between">
                         <div class="card-text">${post.created_at}</div>
                         <div>
-                            <button class="btn btn-danger btn-report" onclick="reportPost(${post.post_id})">신고</button>
+                            <button class="btn btn-primary btn-follow" onclick="followUser('${post.user_id}')">${post.following == 'Y' ? "팔로우 취소" : "팔로우"}</button>
+                            <button class="btn btn-danger btn-report" onclick="reportPost('${post.post_id}')">신고</button>
                         </div>
                     </div>
                     <span class="hidden">${post.post_id}</span>
@@ -190,16 +193,25 @@ function fillPostList(posts) {
 
 }
 
-let canLoadPosts = true;
-
-// 포스트 리스트를 가져오는 함수
+// 포스트 리스트를 가져오는 함수 
 async function getPosts(count) {
+    console.log("getPost")
     if (!canLoadPosts) {
+        console.log("end")
         return;
+    }
+    console.log("start")
+
+    var checkbox = document.getElementById('cb_GetFollowPost');
+
+    var followUserString = '';
+
+    if (checkbox && checkbox.checked) {
+        followUserString = "&follow=y"
     }
 
     try {
-        const response = await fetch(`/posts?count=${count}`);
+        const response = await fetch(`/posts?count=${count}` + followUserString);
 
         if (!response.ok) {
             throw new Error("포스트 리스트를 가져오는데 실패했습니다.");
@@ -263,6 +275,32 @@ console.log(`이 메시지를 보고계실 누군가에게.
 보안 허점을 발견하더라도 작품이 전시되는 축제 기간동안 너그럽게 봐주시고 모른척 해주시면 감사하겠습니다ㅠㅠ
 혹시 서버 코드, DB 설계를 보고 싶으시면 me@darae.dev로 메일 주시기 바랍니다.
 `);
+
+function followUser(userId) {
+    // 로그인 확인
+    if (!isLoggedIn) {
+        alert("로그인 후 이용해주세요.");
+        return;
+    }
+
+    fetch("/follow", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+    })
+    .then(() => {
+        canLoadPosts = true;
+        getPosts(postCount);
+    })
+    .catch((error) => {
+        console.log("Error reporting post:", error);
+        // 에러 처리
+    });
+
+    return;
+}
 
 function reportPost(postId) {
     // 로그인 확인
@@ -328,4 +366,10 @@ function getCookie(name) {
         }
     }
     return null;
+}
+
+function toggleFollowCheckbox() {
+    postCount = 10;
+    canLoadPosts = true;
+    getPosts(postCount);
 }

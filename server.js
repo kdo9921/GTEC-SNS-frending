@@ -195,6 +195,27 @@ const checkLoginStatus = (req, res, next) => {
     }
 };
 
+// 유저 정보
+app.get('/user/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+    
+        await sql.connect(config);
+    
+        // 프로시저 호출
+        const request = new sql.Request();
+        request.input("userid", sql.VarChar(50), userId);
+    
+        const result = await request.execute("GetUserInfo");
+    
+        const userData = result.recordset[0];
+        res.json(userData);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("서버 오류가 발생했습니다.");
+    }
+});
+
 // 로그인 요청 처리
 app.post("/report", async (req, res) => {
     const { postId } = req.body;
@@ -262,19 +283,54 @@ app.get("/logout", (req, res) => {
 app.get("/posts", async (req, res) => {
     // 최근 n개의 게시글을 요청 파라미터에서 가져오기 (기본값은 10)
     const count = req.query.count || "10";
+    const follow = req.query.follow;
+
+    try {
+        // DB 연결
+        await sql.connect(config);
+        const request = new sql.Request();
+
+        request.input("p_cnt", sql.Int, count);
+
+        if (follow && req.session.user) {
+            request.input("p_follow", sql.VarChar(1), "Y");
+        }
+
+        if (req.session.user) {
+            request.input("p_userId", sql.VarChar(50), req.session.user.user_id);
+        }
+
+        const result = await request.execute("GetPost");
+
+        res.json(result.recordset);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("서버 오류가 발생했습니다.");
+    } finally {
+        // DB 연결 종료
+        await sql.close();
+    }
+});
+
+// 팔로우 요청 처리
+app.post("/follow", async (req, res) => {
+    const { userId} = req.body;
+
+    console.log(req.session.user.user_id)
+    console.log(userId)
 
     try {
         // DB 연결
         await sql.connect(config);
 
-        const result = await sql.query(`
-        EXEC GetPost
-          @p_cnt = ${count}
-      `);
+        // 로그인 프로시저 호출
+        const request = new sql.Request();
+        request.input("follower_id", sql.VarChar(50), req.session.user.user_id);
+        request.input("following_id", sql.VarChar(50), userId);
 
-        //const { user_name, content, post_time } = result.recordset[0];
+        await request.execute("FollowUser");
 
-        res.json(result.recordset);
+        res.status(200).send("Done");
     } catch (error) {
         console.error(error);
         res.status(500).send("서버 오류가 발생했습니다.");
