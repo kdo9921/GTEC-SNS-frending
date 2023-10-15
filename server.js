@@ -222,7 +222,7 @@ app.get('/api/user/:userId', async (req, res) => {
     }
 });
 
-// 로그인 요청 처리
+// 신고 요청 처리
 app.post("/report", async (req, res) => {
     const { postId } = req.body;
 
@@ -230,7 +230,7 @@ app.post("/report", async (req, res) => {
         // DB 연결
         await sql.connect(config);
 
-        // 로그인 프로시저 호출
+        // 신고 프로시저 호출
         const request = new sql.Request();
         request.input("p_user_id", sql.VarChar(50), req.session.user.user_id);
         request.input("p_post_id", sql.Int, postId);
@@ -285,7 +285,7 @@ app.get("/logout", (req, res) => {
     });
 });
 
-// GET 요청을 처리하는 핸들러
+// 포스트 가져오기
 app.get("/posts", async (req, res) => {
     // 최근 n개의 게시글을 요청 파라미터에서 가져오기 (기본값은 10)
     const count = req.query.count || "10";
@@ -309,6 +309,58 @@ app.get("/posts", async (req, res) => {
         const result = await request.execute("GetPost");
 
         res.json(result.recordset);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("서버 오류가 발생했습니다.");
+    } finally {
+        // DB 연결 종료
+        await sql.close();
+    }
+});
+
+
+// 댓글 가져오기
+app.get("/comment", async (req, res) => {
+    // 최근 n개의 게시글을 요청 파라미터에서 가져오기 (기본값은 10)
+    const postId = req.query.post;
+
+    try {
+        // DB 연결
+        await sql.connect(config);
+        const request = new sql.Request();
+
+        request.input("p_post_id", sql.Int, postId);
+
+        const result = await request.execute("GetComment");
+
+        res.json(result.recordset);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("서버 오류가 발생했습니다.");
+    } finally {
+        // DB 연결 종료
+        await sql.close();
+    }
+});
+
+// 댓글 작성
+app.post("/comment", async (req, res) => {
+    const { postId, content } = req.body;
+
+    try {
+        // DB 연결
+        await sql.connect(config);
+
+        // 신고 프로시저 호출
+        const request = new sql.Request();
+        request.input("p_post_id", sql.Int, postId);
+        request.input("p_user_id", sql.VarChar(50), req.session.user.user_id);
+        request.input("p_content", sql.NVarChar(300), content);
+        request.output("p_message", sql.VarChar(100));
+
+        await request.execute("CreateComment");
+
+        res.status(200).send("댓글 작성");
     } catch (error) {
         console.error(error);
         res.status(500).send("서버 오류가 발생했습니다.");

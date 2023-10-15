@@ -170,7 +170,7 @@ function fillPostList(posts) {
     // 새로운 포스트 리스트 채우기
     posts.forEach((post) => {
         postHTML += `
-            <div class="card mb-3">
+            <div id="post${post.post_id}" class="card mb-3">
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title"><a href='/user/${post.user_id}'>${post.user_name} (@${post.user_id})</a></h5>
                     <div class="card-text flex-grow-1">${post.content}</div>
@@ -178,9 +178,11 @@ function fillPostList(posts) {
                         <div class="card-text">${post.created_at}</div>
                         <div>
                             <button class="btn btn-primary btn-follow" onclick="followUser('${post.user_id}')">${post.following == 'Y' ? "팔로우 취소" : "팔로우"}</button>
+                            <button class="btn btn-primary" onclick="getComment('${post.post_id}')">댓글</button>
                             <button class="btn btn-danger btn-report" onclick="reportPost('${post.post_id}')">신고</button>
                         </div>
                     </div>
+                    <div class="comment"></div>
                     <span class="hidden">${post.post_id}</span>
                 </div>
             </div>
@@ -300,6 +302,97 @@ function followUser(userId) {
     });
 
     return;
+}
+
+async function getComment(postId, autoHide = true) {
+    var container = document.querySelector("#post" + postId).querySelectorAll(".comment")[0];
+
+    if (container.innerHTML != "" && autoHide) {
+        container.innerHTML = "";
+        return;
+    }
+
+    try {
+        const response = await fetch(`/comment?post=${postId}`);
+
+        if (!response.ok) {
+            throw new Error("댓글 리스트를 가져오는데 실패했습니다.");
+        }
+        const comments = await response.json();
+
+        console.log(comments)
+
+        var container = document.querySelector("#post" + postId).querySelectorAll(".comment")[0];
+
+        var commentHTML = '<hr>'
+
+        // 새로운 포스트 리스트 채우기
+        comments.forEach((comment) => {
+            commentHTML += `
+                <h3>${comment.USER_ID}</h3>
+                <p>${comment.CONTENT}</p>
+                <hr>
+                `;
+        });
+
+        if (commentHTML == '<hr>') {
+            commentHTML += '<h3>아직 댓글이 작성되지 않았습니다</h3><hr>';
+        }
+        if (isLoggedIn) {
+            commentHTML += `
+                <div class="mb-3">
+                    <label for="new_comment_${postId}" class="form-label">댓글 작성</label>
+                    <input type="email" class="form-control" id="new_comment_${postId}" placeholder="댓글 게시하기">
+                    <div class="text-end mt-2">
+                        <button class="btn btn-primary" onclick="postComment(${postId})">
+                            작성
+                        </button>
+                    </div>
+                </div>
+            `
+        }
+
+
+        container.innerHTML = commentHTML;
+
+
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
+function postComment(postId) {
+    var commentElement = document.querySelector('#new_comment_' + postId);
+
+    var data = {
+        postId: postId,
+        content: commentElement.value
+    };
+
+    console.log(data)
+
+    fetch('/comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(data)
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json(); 
+    })
+    .catch(function(error) {
+        console.error('There was a problem with the fetch operation:', error);
+    });
+
+    setTimeout(function() {
+        getComment(postId, false);
+    }, 100); // 100 밀리초 (0.1초) 후에 실행
+    commentElement.value = "";
 }
 
 function reportPost(postId) {
