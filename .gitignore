@@ -147,3 +147,4 @@ dist
 /config.js
 /uploads/*
 .prettierrc
+.DS_Store

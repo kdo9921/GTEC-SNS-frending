@@ -143,6 +143,8 @@
                     document.getElementById("userId").innerText = '@' + data.user_id;
                     document.getElementById("userName").innerText = data.user_name;
                     document.getElementById("userBio").innerText = data.bio;
+					document.getElementById("userDm").innerHTML = "DM"
+					document.getElementById("userDm").setAttribute('href', '/dm/' + data.user_id);
                 } catch (error) {
                     document.getElementById("userId").innerText = '@' + userId;
                     document.getElementById("userName").innerText = '사용자 정보 없음';
@@ -248,10 +250,12 @@
                             <h1>사용자 정보</h1>
                             <h2 id="userName"></h2>
                             <span id="userId"></span>
+
                             <p>
                                 <strong>소개:</strong>
                                 <span id="userBio"></span>
                             </p>
+							<a id="userDm" href=""></a>
                         </div>     
 					</div>
 				</div>

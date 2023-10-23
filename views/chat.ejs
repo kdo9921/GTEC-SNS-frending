@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>채팅방</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 16px);
+    }
+
+    #messages {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        max-height: calc(100% - 70px);
+        overflow-y: scroll;
+        background-color: white;
+        /*border-radius: 15px;*/
+        padding: 15px;
+        margin-bottom: 10px;
+        flex-grow: 1;
+    }
+
+    #chat-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+    }
+    #messages li.me {
+        text-align: right;
+    }
+    #messages li.me .bubble {
+        background-color: lightgray;
+        /*border-radius: 12px 12px 0 12px;*/
+    }
+    #messages li.others {
+        text-align: left;
+    }
+    #messages li.others .bubble {
+        background-color: lightgray;
+        /*border-radius: 12px 12px 12px 0;*/
+    }
+    .bubble {
+        display: inline-block;
+        padding: 10px 15px;
+        max-width: 70%;
+        overflow-wrap: break-word;
+        /*border-radius: 12px;*/
+        margin-top: 16px;
+    }
+    #chat-controls {
+        display: flex;
+        gap: 10px;
+    }
+    #messageInput {
+        flex: 1;
+        /*border-radius: 15px;*/
+        border: 1px solid #ccc;
+        padding: 10px;
+    }
+</style>
+    
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+</head>
+<body>
+    <!-- 메시지를 표시할 목록 -->
+    <ul id="messages"></ul>
+
+    <!-- 채팅 컨트롤: 메시지 입력 필드 및 전송 버튼 -->
+    <div id="chat-controls">
+        <input id="messageInput" autocomplete="off" />
+        <button id="sendButton">전송</button>
+    </div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+    const socket = io();
+
+    
+    // 현재 채팅방에 참가 ('방번호' 채팅방에 참가한다고 서버쪽에 이벤트 발송)
+    socket.emit('joinRoom', '<%= room %>');
+
+    // 채팅 메시지를 받았을 때의 동작 (서버에서 보내는 이벤트 수신하면 실행)
+    socket.on('chatMessage', (data) => {
+        var li = document.createElement('li');
+        var div = document.createElement('div');
+        div.className = 'bubble';
+        
+        // 현재 사용자가 보낸 메시지인지 확인
+        if (data.nickname === '<%= nickname %>') {
+            li.className = 'me';
+            div.textContent = data.message;
+        } else {
+            li.className = 'others';
+            div.textContent = data.message; //data.nickname + ': ' + data.message;
+        }
+
+        li.appendChild(div);
+        document.getElementById('messages').appendChild(li);
+
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    });
+
+    // 엔터 누르면 메시지 전송 버튼 누른것과 같은 동작
+    document.getElementById('messageInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // 메시지 전송 버튼 클릭 
+    document.getElementById('sendButton').onclick = () => {
+        sendMessage();
+    };
+
+    // 메시지 전송
+    function sendMessage() {
+        var message = document.getElementById('messageInput').value;
+        if(message.trim()) {
+            // 서버측에 방 번호와 메시지 내용, 내 닉네임 전송
+            socket.emit('chatMessage', { room: '<%= room %>', message: message, nickname: '<%= nickname %>' });
+            document.getElementById('messageInput').value = '';
+        }
+    }
+
+    // 페이지가 로드되면 이전 메시지 요청
+    document.addEventListener('DOMContentLoaded', (event) => {
+        socket.emit('loadMessages', '<%= room %>');
+    });
+
+    // 서버로부터 이전 메시지를 받음
+    socket.on('loadedMessages', (messages) => {
+        console.log("메시지 로드")
+        console.log(messages)
+        messages.forEach(message => {
+            // 메시지 렌더링 로직 (위에서 정의한 것과 동일)
+            var li = document.createElement('li');
+            var div = document.createElement('div');
+            div.className = 'bubble';
+            
+            // 현재 사용자가 보낸 메시지인지 확인
+            if (message.user_id === '<%= nickname %>') {
+                li.className = 'me';
+                div.textContent = message.message_content;
+            } else {
+                li.className = 'others';
+                div.textContent = data.message; //data.nickname + ': ' + data.message;
+            }
+
+            li.appendChild(div);
+            document.getElementById('messages').appendChild(li);
+
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        });
+    });
+
+    console.log('id : <%= nickname %>')
+</script>
+</body>
+</html>

@@ -1,5 +1,7 @@
-// 필요한 패키지 import
-const express = require("express");
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const sql = require("mssql");
@@ -8,6 +10,7 @@ const sanitizeHtml = require("sanitize-html");
 const sharp = require('sharp');
 const requestIp = require('request-ip');
 const fs = require('fs');
+const path = require('path');
 const storage = multer.diskStorage({
     destination: "uploads", // 저장할 폴더 경로
     filename: (req, file, cb) => {
@@ -41,14 +44,77 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
-// Express.js 애플리케이션 생성
+
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+app.use(express.static(path.join(__dirname, 'public'))); 
+app.set('view engine', 'ejs');
+
+// 클라이언트로부터의 연결을 기다립니다.
+io.on('connection', (socket) => {
+    // 방 접속 이벤트 대기, 클라이언트에서 방번호와 이벤트 발송되면 해당 방번호로 연결
+    socket.on('joinRoom', (room) => {
+        
+        socket.join(room);
+    });
+
+    // 클라이언트에서 메시지 전송시 해당 방으로 메시지 전송
+    socket.on('chatMessage', async ({ room, message, nickname }) => {
+        
+        io.to(room).emit('chatMessage', { message, nickname });
+
+        // 데이터베이스에 메시지 저장
+        try {
+            console.log(`roomid : ${room}\nnickname : ${nickname}\nmessage : ${message}\n`)
+
+            // 데이터베이스 연결
+            await sql.connect(config);
+
+            // 프로시저 호출
+            const request = new sql.Request();
+            
+            request.input('room_id', sql.VarChar(100), room)
+            request.input('user_id', sql.VarChar(50), nickname) // 실제 사용자 ID로 변경해야 함
+            request.input('message_content', sql.NVarChar(300), message)
+
+            await request.execute("InsertChatMessage");
+            
+        } catch (err) {
+            console.error(err);
+        } finally {
+            // 연결 종료 (필요한 경우)
+            await sql.close();
+        }
+    });
+
+    socket.on('loadMessages', async (room) => {
+        try {
+            console.log(room)
+            // 데이터베이스 연결 및 메시지 로드
+            await sql.connect(config);
+            const request = new sql.Request();
+
+            request.input('room_id', sql.VarChar(100), room)
+            const result = await request.execute('GetChatMessages'); 
+            
+            console.log(result)
+            // 클라이언트에게 메시지 전송
+            socket.emit('loadedMessages', result.recordset);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            await sql.close(); // 연결을 닫거나 풀에 반환
+        }
+    });
+});
+
 
 // 세션 암호화를 위한 비밀키
 const secretKey = generateRandomString(32);
 
-// 정적 파일 제공 설정
-app.use(express.static(__dirname));
 
 // Body-parser 미들웨어 설정
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -81,6 +147,12 @@ const config = {
 };
 */
 
+// 메인 페이지 렌더링
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/index.html");
+});
+
+
 // 로그인 페이지 렌더링
 app.get("/login", (req, res) => {
     res.sendFile(__dirname + "/login.html");
@@ -91,31 +163,14 @@ app.get("/register", (req, res) => {
     res.sendFile(__dirname + "/register.html");
 });
 
+// 게시글 작성
 app.post("/create-post", async (req, res) => {
     const { content } = req.body;
 
     // 입력된 HTML을 필터링하여 특정 태그만 허용
     const filteredHtml = sanitizeHtml(content, {
         allowedTags: [
-            "p",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "br",
-            "strong",
-            "em",
-            "del",
-            "hr",
-            "ol",
-            "ul",
-            "li",
-            "a",
-            "img",
-            "pre",
-            "code",
+            "p", "h1", "h2", "h3","h4","h5","h6","br","strong","em","del","hr","ol","ul","li","a","img","pre","code",
         ], // 필터링에서 허용할 태그 목록
     });
 
@@ -195,14 +250,37 @@ const checkLoginStatus = (req, res, next) => {
     }
 };
 
-// 로그인 페이지 렌더링
+// 로그인 페이지 처리
 app.get("/user/:userId", (req, res) => {
     res.sendFile(__dirname + "/user.html");
 });
 
+// 채팅방 페이지 렌더링
+app.get('/dm/:room', (req, res) => {
+    if (req.session.isLoggedIn) { 
+
+        console.log(req.session.user)
+        console.log(req.session.user.user_id)
+
+        const userList = [req.params.room, req.session.user.user_id];
+        userList.sort();
+
+        console.log('userList : ' + userList)
+
+        const roomId = userList[0] + '@' + userList[1];
+
+        console.log('roomId : ' + roomId)
+
+        res.render('chat', { room: roomId, nickname: req.session.user.user_id });
+    } 
+    else {
+        // 비로그인 상태일 경우 로그인 페이지로 리다이렉트
+        res.redirect("/login");
+    }
+});
+
 // 유저 정보 api
 app.get('/api/user/:userId', async (req, res) => {
-    console.log("asdf");
     try {
         const userId = req.params.userId;
     
@@ -518,10 +596,6 @@ app.post("/upload", upload.single("image"), (req, res) => {
         });
 });
 
-// 서버 실행
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
-});
 
 function generateRandomString(length) {
     const characters =
@@ -533,3 +607,11 @@ function generateRandomString(length) {
     }
     return randomString;
 }
+
+
+// 서버를 시작합니다.
+const PORT = 3000; // 포트 번호는 환경에 맞게 변경할 수 있습니다.
+server.listen(PORT, () => {
+    console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
+});
+
