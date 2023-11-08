@@ -256,22 +256,51 @@ app.get("/user/:userId", (req, res) => {
 });
 
 // 채팅방 페이지 렌더링
-app.get('/dm/:room', (req, res) => {
+app.get('/dm/:room', async (req, res) => {
     if (req.session.isLoggedIn) { 
-
-        console.log(req.session.user)
-        console.log(req.session.user.user_id)
-
         const userList = [req.params.room, req.session.user.user_id];
         userList.sort();
 
-        console.log('userList : ' + userList)
-
         const roomId = userList[0] + '@' + userList[1];
 
-        console.log('roomId : ' + roomId)
+        try {
+            await sql.connect(config);
+            const request = new sql.Request();
+            request.input("user_id", sql.VarChar(50), req.session.user.user_id);
+            const result = await request.execute("GetChatList");
+            
+            res.render('chat', { room: roomId, nickname: req.session.user.user_id , chatList : result.recordset});
+        } catch (error) {
+            console.error(error);
+            res.status(500).send("서버 오류가 발생했습니다.");
+        } finally {
+            // DB 연결 종료
+            await sql.close();
+        }
+    } 
+    else {
+        // 비로그인 상태일 경우 로그인 페이지로 리다이렉트
+        res.redirect("/login");
+    }
+});
 
-        res.render('chat', { room: roomId, nickname: req.session.user.user_id });
+// 채팅방 페이지 렌더링
+app.get('/dm', async (req, res) => {
+    if (req.session.isLoggedIn) { 
+        try {
+            await sql.connect(config);
+            const request = new sql.Request();
+            request.input("user_id", sql.VarChar(50), req.session.user.user_id);
+            const result = await request.execute("GetChatList");
+            
+            res.render('chat', { room : false, nickname: req.session.user.user_id , chatList : result.recordset});
+        } catch (error) {
+            console.error(error);
+            res.status(500).send("서버 오류가 발생했습니다.");
+        } finally {
+            // DB 연결 종료
+            await sql.close();
+        }
     } 
     else {
         // 비로그인 상태일 경우 로그인 페이지로 리다이렉트
@@ -615,3 +644,9 @@ server.listen(PORT, () => {
     console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
 });
 
+
+sql.connect(config, err => {
+    if(err) {
+      console.log("Error while connecting to database:", err);
+    }
+  });

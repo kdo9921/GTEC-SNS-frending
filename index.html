@@ -22,6 +22,7 @@
 			body {
 				background-color: #f8f9fa;
 			}
+
 			#postList img {
 				max-width: 100%;
 			}
@@ -32,7 +33,7 @@
 				box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 			}
 
-			.card-title a:link, a:visited {
+			.card-title a:link, .card-title a:visited {
                 color: black;
                 text-decoration: none;
             }
@@ -40,10 +41,6 @@
 			@media (prefers-color-scheme: dark) {
 				body {
 					background-color: #303030;
-					color: #f8f9fa;
-				}
-
-				nav {
 					color: #f8f9fa;
 				}
 
@@ -64,7 +61,7 @@
 					color: #6c757d;
 				}
 
-				.card-title a:link, a:visited {
+				.card-title a:link, .card-title a:visited {
 					color: #f8f9fa;
 					text-decoration: none;
 				}
@@ -76,7 +73,7 @@
 	<body>
 		<nav
 			class="navbar navbar-expand-lg navbar-light"
-			style="background-color: #a7bf04"
+			style="background-color: #9ce159"
 		>
 			<div class="container">
 				<a class="navbar-brand" href="#">Frending</a>
@@ -103,6 +100,9 @@
 								href="./logout"
 								>Logout</a
 							>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="./dm">DM</a>
 						</li>
 					</ul>
 				</div>
